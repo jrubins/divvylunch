@@ -1,0 +1,21 @@
+.button {
+  padding: 10px 15px;
+  border: 1px solid $curious-blue;
+  background-color: $white;
+  color: $curious-blue;
+
+  .circle-snake-loader {
+    width: 15px;
+    height: 15px;
+    border-width: 2px;
+  }
+
+  .circle-snake-loader-inline {
+    margin-right: 8px;
+  }
+}
+
+.button-disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}

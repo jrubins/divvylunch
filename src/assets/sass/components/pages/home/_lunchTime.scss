@@ -1,0 +1,37 @@
+.lunch-time-content {
+  display: flex;
+  justify-content: space-between;
+}
+
+.lunch-time-options {
+  width: 68%;
+  margin-right: 40px;
+  padding-right: 40px;
+  border-right: 1px solid $alto;
+
+  h3 {
+    color: $silver-chalice;
+
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  li {
+    padding: 20px 0;
+  }
+}
+
+.lunch-time-eat {
+  width: 30%;
+
+  .button {
+    width: 100%;
+  }
+}
+
+.lunch-time-chosen-place {
+  .button {
+    margin-top: 20px;
+  }
+}

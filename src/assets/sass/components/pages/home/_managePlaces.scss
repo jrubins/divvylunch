@@ -1,0 +1,24 @@
+.manage-places {
+  .input {
+    width: 50%;
+  }
+}
+
+.manage-places-existing {
+  li {
+    display: flex;
+    align-items: center;
+
+    padding: 20px 0;
+
+    &:hover .manage-places-existing-delete {
+      display: block;
+    }
+  }
+}
+
+.manage-places-existing-delete {
+  display: none;
+
+  margin-left: 15px;
+}

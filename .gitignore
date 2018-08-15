@@ -1,0 +1,16 @@
+# Builds
+dist
+stats.json
+
+# Cache
+.babel-cache
+.DS_Store
+.eslintcache
+.jest-cache
+.tmp
+
+# Logging
+*.log
+
+# Vendor
+node_modules
