@@ -1,5 +1,3 @@
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-  .BundleAnalyzerPlugin
 const DotenvPlugin = require('webpack-dotenv-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const webpack = require('webpack')
@@ -8,18 +6,23 @@ const buildConfig = require('./buildConfig')
 
 module.exports = {
   context: __dirname,
+  devServer: {
+    clientLogLevel: 'error', // The default value for this outputs too much in DevTools.
+    contentBase: buildConfig.paths.src.base,
+    historyApiFallback: {
+      disableDotRule: true,
+    },
+    host: '0.0.0.0',
+    hot: true,
+    port: buildConfig.serverPort,
+  },
   entry: [
     'react-hot-loader/patch',
     `webpack-dev-server/client?http://localhost:${buildConfig.serverPort}`,
     'webpack/hot/only-dev-server',
     buildConfig.paths.src.mainJs,
   ],
-  output: {
-    chunkFilename: 'js/[name].js',
-    filename: 'js/[name].js',
-    path: buildConfig.paths.dist,
-    publicPath: '/',
-  },
+  mode: 'development',
   module: {
     rules: [
       {
@@ -44,11 +47,27 @@ module.exports = {
       },
     ],
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        commons: {
+          chunks: 'all',
+          name: 'vendor',
+          test: /[\\/]node_modules[\\/]/,
+        },
+      },
+    },
+    runtimeChunk: {
+      name: 'manifest',
+    },
+  },
+  output: {
+    chunkFilename: 'js/[name].js',
+    filename: 'js/[name].js',
+    path: buildConfig.paths.dist,
+    publicPath: '/',
+  },
   plugins: [
-    new BundleAnalyzerPlugin({
-      openAnalyzer: false,
-    }),
-
     // We don't really use this as different env files for different people. Just a place to keep common
     // env variables for the project as a whole.
     new DotenvPlugin({
@@ -58,6 +77,8 @@ module.exports = {
     }),
     new HtmlWebpackPlugin({
       favicon: buildConfig.paths.src.favicon,
+      // "inject: true" places all JavaScript resources at the bottom of the body element.
+      inject: true,
       template: buildConfig.paths.src.html,
     }),
     new webpack.HotModuleReplacementPlugin(),
@@ -67,37 +88,9 @@ module.exports = {
 
     // Ignore locales from moment.
     new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
-
-    // Extracts common node modules from our async chunks.
-    new webpack.optimize.CommonsChunkPlugin({
-      async: 'node-async',
-      children: true,
-      minChunks: module =>
-        module.context && module.context.indexOf('node_modules') !== -1,
-      names: ['main'],
-    }),
-
-    // This makes our vendor bundle from node_modules modules.
-    new webpack.optimize.CommonsChunkPlugin({
-      minChunks: module =>
-        module.context && module.context.indexOf('node_modules') !== -1,
-      name: 'vendor',
-    }),
-
-    // This ensures that our vendor bundle name doesn't change between builds (unless the vendor contents change)
-    // by extracting out the webpack bootstrap code into its own file.
-    new webpack.optimize.CommonsChunkPlugin({
-      minChunks: Infinity,
-      name: 'manifest',
-    }),
   ],
   resolve: {
-    modules: ['node_modules', buildConfig.paths.base],
     extensions: ['.js', '.jsx'],
-  },
-  devServer: {
-    historyApiFallback: true,
-    hot: true,
-    port: buildConfig.serverPort,
+    modules: ['node_modules', buildConfig.paths.base],
   },
 }

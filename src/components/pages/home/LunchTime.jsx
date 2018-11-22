@@ -1,94 +1,75 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import _ from 'lodash'
+import ApiRequest from '@jrubins/react-components/lib/api/ApiRequest'
+import Button from '@jrubins/react-components/lib/forms/fields/Button'
 
-import { markLunchPlaceVisited } from '../../../services/api/lunchPlaces'
+import { markLunchPlaceVisited } from '../../../utils/api/lunchPlaces'
 
-import ApiRequest from '../../reusable/api/ApiRequest'
-import Button from '../../reusable/forms/fields/Button'
 import LunchPlace from './LunchPlace'
 
-class LunchTime extends Component {
-  constructor(props) {
-    super(props)
-
-    this.state = {
-      lunchPlaceToEatAtId: null,
-    }
-
-    this.chooseLunchPlace = this.chooseLunchPlace.bind(this)
-  }
+const LunchTime = ({ lunchPlaces, onClickAddPlaces, refetchLunchPlaces }) => {
+  const [lunchPlaceToEatAtId, setLunchPlaceToEatAtId] = useState(null)
+  const lunchPlaceToEatAt = _.find(lunchPlaces, { id: lunchPlaceToEatAtId })
 
   /**
    * Chooses a random lunch place for the user to go to.
    */
-  chooseLunchPlace() {
-    const { lunchPlaces } = this.props
+  function chooseLunchPlace() {
     const randomIndex = _.random(0, lunchPlaces.length - 1)
 
-    this.setState({
-      lunchPlaceToEatAtId: lunchPlaces[randomIndex].id,
-    })
+    setLunchPlaceToEatAtId(lunchPlaces[randomIndex].id)
   }
 
-  render() {
-    const { lunchPlaces, onClickAddPlaces, refetchLunchPlaces } = this.props
-    const { lunchPlaceToEatAtId } = this.state
-    const lunchPlaceToEatAt = _.find(lunchPlaces, { id: lunchPlaceToEatAtId })
+  return (
+    <div className="lunch-time">
+      {lunchPlaces.length === 0 && (
+        <p>
+          You have no lunch places. <a onClick={onClickAddPlaces}>Add</a> places
+          you're willing to eat!
+        </p>
+      )}
 
-    return (
-      <div className="lunch-time">
-        {lunchPlaces.length === 0 && (
-          <p>
-            You have no lunch places. <a onClick={onClickAddPlaces}>Add</a>{' '}
-            places you're willing to eat!
-          </p>
-        )}
-
-        {lunchPlaces.length > 0 && (
-          <div className="lunch-time-content">
-            <div className="lunch-time-options">
-              <h3>Options</h3>
-              <ul>
-                {_.map(
-                  _.sortBy(lunchPlaces, 'name'),
-                  ({ id, name, visits }) => (
-                    <li key={id}>
-                      <LunchPlace name={name} visits={visits} />
-                    </li>
-                  )
-                )}
-              </ul>
-            </div>
-            <div className="lunch-time-eat">
-              {!lunchPlaceToEatAt && (
-                <Button handleClick={this.chooseLunchPlace}>Let's Eat!</Button>
-              )}
-
-              {lunchPlaceToEatAt && (
-                <div className="lunch-time-chosen-place">
-                  <LunchPlace
-                    name={lunchPlaceToEatAt.name}
-                    visits={lunchPlaceToEatAt.visits}
-                  />
-                  <ApiRequest
-                    apiFn={async () => {
-                      await markLunchPlaceVisited(lunchPlaceToEatAt.id)
-                      refetchLunchPlaces()
-                    }}
-                  >
-                    {({ makeApiRequest }) => (
-                      <Button handleClick={makeApiRequest}>Sounds Good!</Button>
-                    )}
-                  </ApiRequest>
-                </div>
-              )}
-            </div>
+      {lunchPlaces.length > 0 && (
+        <div className="lunch-time-content">
+          <div className="lunch-time-options">
+            <h3>Options</h3>
+            <ul>
+              {_.map(_.sortBy(lunchPlaces, 'name'), ({ id, name, visits }) => (
+                <li key={id}>
+                  <LunchPlace name={name} visits={visits} />
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
-      </div>
-    )
-  }
+          <div className="lunch-time-eat">
+            {!lunchPlaceToEatAt && (
+              <Button handleClick={chooseLunchPlace}>Let's Eat!</Button>
+            )}
+
+            {lunchPlaceToEatAt && (
+              <div className="lunch-time-chosen-place">
+                <LunchPlace
+                  name={lunchPlaceToEatAt.name}
+                  visits={lunchPlaceToEatAt.visits}
+                />
+                <ApiRequest
+                  apiFn={async () => {
+                    await markLunchPlaceVisited(lunchPlaceToEatAt.id)
+                    refetchLunchPlaces()
+                  }}
+                >
+                  {({ makeApiRequest }) => (
+                    <Button handleClick={makeApiRequest}>Sounds Good!</Button>
+                  )}
+                </ApiRequest>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 LunchTime.propTypes = {

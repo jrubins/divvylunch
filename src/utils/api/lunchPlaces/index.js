@@ -1,4 +1,4 @@
-import { apiDelete, get, post } from '../'
+import { apiDelete, get, post } from '@jrubins/utils/lib/requests'
 
 /**
  * Creates a new lunch place.

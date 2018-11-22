@@ -1,6 +1,6 @@
 const CopyWebpackPlugin = require('copy-webpack-plugin')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 
 const buildConfig = require('./buildConfig')
@@ -11,12 +11,7 @@ module.exports = {
   entry: {
     main: buildConfig.paths.src.mainJs,
   },
-  output: {
-    chunkFilename: 'js/[name].[chunkhash].js',
-    filename: 'js/[name].[chunkhash].js',
-    path: buildConfig.paths.dist,
-    publicPath: '/',
-  },
+  mode: 'production',
   module: {
     rules: [
       {
@@ -27,19 +22,49 @@ module.exports = {
       {
         test: /\.scss$/,
         include: [buildConfig.paths.src.base],
-        loader: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: ['css-loader?importLoaders=1', 'postcss-loader', 'sass-loader'],
-        }),
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader?importLoaders=1',
+          'postcss-loader',
+          'sass-loader',
+        ],
+      },
+      {
+        test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+        loader: 'file-loader',
+        options: {
+          name: '[name].[hash].[ext]',
+        },
       },
     ],
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        commons: {
+          chunks: 'all',
+          name: 'vendor',
+          test: /[\\/]node_modules[\\/]/,
+        },
+      },
+    },
+    runtimeChunk: {
+      name: 'manifest',
+    },
+  },
+  output: {
+    chunkFilename: 'js/[name].[chunkhash].js',
+    filename: 'js/[name].[chunkhash].js',
+    path: buildConfig.paths.dist,
+    publicPath: '/',
+  },
   plugins: [
     // This is a shorthand plugin for the DefinePlugin.
-    new webpack.EnvironmentPlugin(['API_BASE_URL', 'APP_ENV', 'NODE_ENV']),
-
+    new webpack.EnvironmentPlugin(['APP_ENV', 'NODE_ENV']),
     new HtmlWebpackPlugin({
       favicon: buildConfig.paths.src.favicon,
+      // "inject: true" places all JavaScript resources at the bottom of the body element.
+      inject: true,
       template: buildConfig.paths.src.html,
     }),
 
@@ -50,47 +75,9 @@ module.exports = {
     // will cache-bust the vendor bundle.
     new webpack.HashedModuleIdsPlugin(),
 
-    // Enable scope-hoisting.
-    new webpack.optimize.ModuleConcatenationPlugin(),
-
-    // Extracts common node modules from our async chunks.
-    new webpack.optimize.CommonsChunkPlugin({
-      async: 'node-async',
-      children: true,
-      minChunks: module =>
-        module.context && module.context.indexOf('node_modules') !== -1,
-      names: ['main'],
+    new MiniCssExtractPlugin({
+      filename: 'css/[name].[contenthash].css',
     }),
-
-    // This makes our vendor bundle from node_modules modules.
-    new webpack.optimize.CommonsChunkPlugin({
-      minChunks: module =>
-        module.context && module.context.indexOf('node_modules') !== -1,
-      name: 'vendor',
-    }),
-
-    // This ensures that our vendor bundle name doesn't change between builds (unless the vendor contents change)
-    // by extracting out the webpack bootstrap code into its own file.
-    new webpack.optimize.CommonsChunkPlugin({
-      minChunks: Infinity,
-      name: 'manifest',
-    }),
-
-    new webpack.optimize.UglifyJsPlugin({
-      compress: {
-        screw_ie8: true, // eslint-disable-line camelcase
-        warnings: false,
-      },
-      mangle: {
-        screw_ie8: true, // eslint-disable-line camelcase
-      },
-      output: {
-        comments: false,
-        screw_ie8: true, // eslint-disable-line camelcase
-      },
-    }),
-
-    new ExtractTextPlugin('css/[name].[contenthash].css'),
 
     new CopyWebpackPlugin([
       {
@@ -99,7 +86,7 @@ module.exports = {
     ]),
   ],
   resolve: {
-    modules: ['node_modules', buildConfig.paths.base],
     extensions: ['.js', '.jsx'],
+    modules: ['node_modules', buildConfig.paths.base],
   },
 }

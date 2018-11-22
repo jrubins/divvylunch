@@ -1,103 +1,76 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
+import { KEYCODES } from '@jrubins/utils/lib/keyboard'
+import { isApiRequestError } from '@jrubins/utils/lib/api'
 import _ from 'lodash'
+import ApiRequest from '@jrubins/react-components/lib/api/ApiRequest'
+import Input from '@jrubins/react-components/lib/forms/fields/Input'
 
-import { KEYCODES } from '../../../utils/keyboard'
 import {
   createLunchPlace,
   deleteLunchPlace,
-} from '../../../services/api/lunchPlaces'
-import { isApiRequestError } from '../../../utils/api'
+} from '../../../utils/api/lunchPlaces'
 
-import ApiRequest from '../../reusable/api/ApiRequest'
-import Input from '../../reusable/forms/fields/Input'
 import LunchPlace from './LunchPlace'
 
-class ManagePlaces extends Component {
-  constructor(props) {
-    super(props)
-
-    this.state = {
-      newLunchPlaceName: null,
-    }
-
-    this.createLunchPlace = this.createLunchPlace.bind(this)
-    this.onChangeNewLunchPlaceName = this.onChangeNewLunchPlaceName.bind(this)
-  }
+const ManagePlaces = ({ lunchPlaces, refetchLunchPlaces }) => {
+  const [newLunchPlaceName, setNewLunchPlaceName] = useState(null)
 
   /**
    * Creates a new lunch place.
    *
    * @returns {Promise}
    */
-  async createLunchPlace() {
-    const createLunchPlaceApiResult = await createLunchPlace({
-      name: this.state.newLunchPlaceName,
-    })
 
-    if (!isApiRequestError(createLunchPlaceApiResult)) {
-      this.props.refetchLunchPlaces()
+  return (
+    <div className="manage-places">
+      <ApiRequest
+        apiFn={async () => {
+          const createLunchPlaceApiResult = await createLunchPlace({
+            name: newLunchPlaceName,
+          })
 
-      this.setState({
-        newLunchPlaceName: null,
-      })
-    }
+          if (!isApiRequestError(createLunchPlaceApiResult)) {
+            refetchLunchPlaces()
+            setNewLunchPlaceName(null)
+          }
 
-    return createLunchPlaceApiResult
-  }
+          return createLunchPlaceApiResult
+        }}
+      >
+        {({ makeApiRequest }) => (
+          <Input
+            handleChange={setNewLunchPlaceName}
+            handleKeyDown={event => {
+              if (event.keyCode === KEYCODES.ENTER) {
+                makeApiRequest()
+              }
+            }}
+            placeholder="Type a lunch location you're willing to eat..."
+            type="text"
+            value={newLunchPlaceName}
+          />
+        )}
+      </ApiRequest>
 
-  /**
-   * Handles an update to the lunch place name.
-   *
-   * @param {String} newLunchPlaceName
-   */
-  onChangeNewLunchPlaceName(newLunchPlaceName) {
-    this.setState({
-      newLunchPlaceName,
-    })
-  }
-
-  render() {
-    const { lunchPlaces, refetchLunchPlaces } = this.props
-    const { newLunchPlaceName } = this.state
-
-    return (
-      <div className="manage-places">
-        <ApiRequest apiFn={this.createLunchPlace}>
-          {({ makeApiRequest }) => (
-            <Input
-              handleChange={this.onChangeNewLunchPlaceName}
-              handleKeyDown={event => {
-                if (event.keyCode === KEYCODES.ENTER) {
-                  makeApiRequest()
-                }
-              }}
-              placeholder="Type a lunch location you're willing to eat..."
-              type="text"
-              value={newLunchPlaceName}
-            />
-          )}
-        </ApiRequest>
-
-        <div className="manage-places-existing">
-          <ul>
-            {_.map(_.sortBy(lunchPlaces, 'name'), ({ id, name, visits }) => (
-              <li key={id}>
-                <LunchPlace
-                  onDelete={async () => {
-                    await deleteLunchPlace(id)
-                    refetchLunchPlaces()
-                  }}
-                  name={name}
-                  visits={visits}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="manage-places-existing">
+        <ul>
+          {_.map(_.sortBy(lunchPlaces, 'name'), ({ id, name, visits }) => (
+            <li key={id}>
+              <LunchPlace
+                onDelete={async () => {
+                  await deleteLunchPlace(id)
+                  refetchLunchPlaces()
+                }}
+                name={name}
+                visits={visits}
+              />
+            </li>
+          ))}
+        </ul>
       </div>
-    )
-  }
+    </div>
+  )
 }
 
 ManagePlaces.propTypes = {
